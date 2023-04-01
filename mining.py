@@ -12,8 +12,8 @@ IS_SCRIPT_RUNNING = True
 # global vars used, CONFIG required
 CENTER_X = 1280
 CENTER_Y = 720
-OFFSET_X = 50
-OFFSET_Y = 75
+OFFSET_X = -70
+OFFSET_Y = 20
 LAST_SELECTED = None
 STUCK_FOR_ITERATIONS = 0
 MAX_PERMITTED_STUCK_ITERATIONS = 3
@@ -23,7 +23,7 @@ STONE_NAMES = ['ore']
 PICKUP_DROP = True
 LURE_KEY = '3'
 # in hours
-DEADLINE = 99999
+DEADLINE = 6
 
 # quality of life change
 log('Waiting 1 sec for alt tab!')

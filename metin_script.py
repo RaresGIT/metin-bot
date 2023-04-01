@@ -150,29 +150,28 @@ def farm_ores(ores: list, offset_x: int, offset_y: int):
     # global LAST_SELECTED, STUCK_FOR_ITERATIONS
     stones_found = len(ores)
     # hp_bar, top_bar = find_top_bar()
-    broke_ore = pyautogui.locateOnScreen('./mining/ore_drop.png', region=(
-        100, 100, 2500, 1200), grayscale=True, confidence=0.7)
+    # broke_ore = pyautogui.locateOnScreen('./mining/ore_drop.png', region=(
+    #     100, 100, 2500, 1200), grayscale=True, confidence=0.7)
 
     if stones_found == 0:
         move_camera()
         return
 
-    if broke_ore is None:
-        if stones_found > 0:
-            pyautogui.keyDown('s')
-            time.sleep(0.01)
-            pyautogui.keyUp('s')
+    # if broke_ore is None:
+    if stones_found > 0:
+        pyautogui.keyDown('s')
+        time.sleep(0.01)
+        pyautogui.keyUp('s')
 
-            time.sleep(0.1)
+        time.sleep(0.1)
 
-            destroy_closest_ore(ores, offset_x, offset_y)
-            time.sleep(13)
+        destroy_closest_ore(ores, offset_x, offset_y)
+        time.sleep(13)
 
     # otherwise move camera until we see at least 1
     # otherwise it means we are already fighting
-    else:
-        pyautogui.press('z')
-        log('Search Paused!')
+
+    pyautogui.press('z')
 
 
 def main():
