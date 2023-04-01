@@ -10,8 +10,9 @@ from utils import log, search_ores
 IS_SCRIPT_RUNNING = True
 
 # global vars used, CONFIG required
-CENTER_X = 1280
-CENTER_Y = 720
+# default for vm resolution
+CENTER_X = 512
+CENTER_Y = 384
 OFFSET_X = -70
 OFFSET_Y = 20
 LAST_SELECTED = None
