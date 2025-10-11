@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(pip install:*)",
-      "Bash(if not exist \".claude\" mkdir .claude)"
+      "Bash(if not exist \".claude\" mkdir .claude)",
+      "Bash(mkdir:*)",
+      "Bash(poetry --version)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []
