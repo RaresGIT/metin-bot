@@ -27,6 +27,16 @@ class KeyboardController:
         if delay > 0:
             time.sleep(delay)
 
+    def tap(self, key: str, delay: float = 0.0) -> None:
+        """
+        Tap a key (alias for press).
+
+        Args:
+            key: Key to tap (e.g., 'w', 'space', 'esc')
+            delay: Delay after tapping in seconds
+        """
+        self.press(key, delay)
+
     def hold(self, key: str, duration: float) -> None:
         """
         Hold a key down for a duration.

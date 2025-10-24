@@ -40,6 +40,9 @@ class StoneFarmingStrategy(BotStrategy):
         # Pathfinding unstuck tracking
         self.last_cluster_positions = []  # Track cluster positions to detect stuck
         self.last_position_change_time = time.time()  # When positions last changed
+        self.last_unstuck_time = 0.0  # Timestamp of last unstuck attempt
+        self.consecutive_unstuck_attempts = 0  # Count consecutive unstuck attempts
+        self.unstuck_cooldown = 5.0  # Minimum seconds between unstuck attempts
 
     def execute(self) -> None:
         """Execute one iteration of stone farming with smart target tracking."""
@@ -124,6 +127,8 @@ class StoneFarmingStrategy(BotStrategy):
                 self.logger.info(f"Attacking new target at {target.coords}")
                 self.combat.attack_target(target)
                 self.no_target_count = 0
+                # Reset unstuck tracking when successfully attacking
+                self.consecutive_unstuck_attempts = 0
             else:
                 if self.config.debug:
                     self.logger.debug("All targets filtered out (too close to edges)")
@@ -145,6 +150,17 @@ class StoneFarmingStrategy(BotStrategy):
         from ..vision.color_detector import ColorCluster
         from ..vision.image_matcher import ImageMatch
 
+        current_time = time.time()
+
+        # Check cooldown - don't spam unstuck attempts
+        time_since_last_unstuck = current_time - self.last_unstuck_time
+        if time_since_last_unstuck < self.unstuck_cooldown:
+            if self.config.debug:
+                self.logger.debug(
+                    f"Unstuck on cooldown: {time_since_last_unstuck:.1f}s/{self.unstuck_cooldown}s"
+                )
+            return False
+
         # Extract positions from stones (works for both v1 and v2)
         current_positions = []
         for stone in stones:
@@ -154,16 +170,16 @@ class StoneFarmingStrategy(BotStrategy):
                 current_positions.append((stone.left, stone.top))
 
         # Check if positions have changed significantly
+        # Use a more lenient threshold (100px instead of 50px) to account for small movements
         positions_changed = self._have_positions_changed(
-            current_positions, self.last_cluster_positions, threshold=50
+            current_positions, self.last_cluster_positions, threshold=100
         )
 
-        current_time = time.time()
-
         if positions_changed:
-            # Positions changed, reset tracking
+            # Positions changed, reset tracking and consecutive attempts
             self.last_cluster_positions = current_positions
             self.last_position_change_time = current_time
+            self.consecutive_unstuck_attempts = 0  # Reset on successful movement
             return False
 
         # Positions haven't changed, check timeout
@@ -171,15 +187,36 @@ class StoneFarmingStrategy(BotStrategy):
 
         if time_stuck >= self.config.unstuck_timeout:
             # We're stuck! Perform unstuck
+            self.consecutive_unstuck_attempts += 1
+
             self.logger.warning(
                 f"Stuck detected! Cluster positions unchanged for {time_stuck:.1f}s "
-                f"(threshold: {self.config.unstuck_timeout}s)"
+                f"(threshold: {self.config.unstuck_timeout}s) - Attempt #{self.consecutive_unstuck_attempts}"
             )
+
+            # If too many consecutive unstuck attempts, give up and search elsewhere
+            if self.consecutive_unstuck_attempts >= 3:
+                self.logger.warning(
+                    "Too many consecutive unstuck attempts! Abandoning current area and searching..."
+                )
+                self.movement.search_for_targets(
+                    num_rotations=self.config.search_camera_rotations,
+                    move_forward_time=self.config.search_move_forward_time * 2,  # Move further away
+                )
+                # Reset everything after search
+                self.last_cluster_positions = []
+                self.last_position_change_time = current_time
+                self.last_unstuck_time = current_time
+                self.consecutive_unstuck_attempts = 0
+                return True
+
+            # Perform unstuck
             self.movement.unstuck_pathfinding()
 
-            # Reset tracking after unstuck
+            # Update tracking after unstuck
             self.last_cluster_positions = []
             self.last_position_change_time = current_time
+            self.last_unstuck_time = current_time
             return True
 
         # Not stuck yet, but positions haven't changed
@@ -201,24 +238,36 @@ class StoneFarmingStrategy(BotStrategy):
         Returns:
             True if positions have changed significantly
         """
-        # If different number of clusters, positions changed
-        if len(current_positions) != len(last_positions):
-            return True
-
         # If no previous positions, consider it changed
         if not last_positions:
             return True
 
-        # Sort both lists to match corresponding positions
-        current_sorted = sorted(current_positions)
-        last_sorted = sorted(last_positions)
+        # If no current positions, definitely changed
+        if not current_positions:
+            return True
 
-        # Check if any position moved more than threshold
+        # If cluster count changed significantly (more than ±1), positions changed
+        # Allow ±1 to account for detection variance
+        cluster_diff = abs(len(current_positions) - len(last_positions))
+        if cluster_diff > 1:
+            return True
+
+        # Compare the closest matching positions
+        # Use minimum of the two lengths to avoid index errors
+        min_len = min(len(current_positions), len(last_positions))
+
+        # Sort both lists to match corresponding positions
+        current_sorted = sorted(current_positions)[:min_len]
+        last_sorted = sorted(last_positions)[:min_len]
+
+        # Check if ANY position moved more than threshold
+        # This means the player/camera is moving
         for (cx, cy), (lx, ly) in zip(current_sorted, last_sorted):
             distance = ((cx - lx) ** 2 + (cy - ly) ** 2) ** 0.5
             if distance > threshold:
                 return True
 
+        # All positions are within threshold - player is stuck
         return False
 
     def _handle_no_targets(self) -> None:
@@ -228,6 +277,8 @@ class StoneFarmingStrategy(BotStrategy):
         # Reset position tracking when no targets found
         self.last_cluster_positions = []
         self.last_position_change_time = time.time()
+        # Reset consecutive unstuck attempts when moving to new area
+        self.consecutive_unstuck_attempts = 0
 
         if self.no_target_count >= 3:
             # After 3 consecutive no-target iterations, do comprehensive search

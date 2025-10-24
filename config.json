@@ -2,7 +2,7 @@
   "OFFSET_X": 70,
   "OFFSET_Y": 45,
   "WAIT_AFTER_SELECT": 4.5,
-  "UNSTUCK_TIMEOUT": 10,
+  "UNSTUCK_TIMEOUT": 8,
   "STONE_NAMES": ["dragon"],
   "PICKUP_DROP": true,
   "LURE_KEY": "",

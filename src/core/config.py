@@ -20,7 +20,7 @@ class BotConfig:
     wait_after_select: float = 3.0  # Pause after clicking target
     max_permitted_stuck_iterations: int = 3
     max_seconds_stuck: float = 1.0
-    unstuck_timeout: float = 10.0  # Seconds before attempting unstuck if clusters don't change
+    unstuck_timeout: float = 8.0  # Seconds before attempting unstuck if clusters don't change
 
     # Target tracking
     screen_edge_margin: int = 150  # Ignore targets within this distance from screen edges
@@ -68,7 +68,7 @@ class BotConfig:
             offset_x=data.get("OFFSET_X", 70),
             offset_y=data.get("OFFSET_Y", 45),
             wait_after_select=data.get("WAIT_AFTER_SELECT", 3.0),
-            unstuck_timeout=data.get("UNSTUCK_TIMEOUT", 10.0),
+            unstuck_timeout=data.get("UNSTUCK_TIMEOUT", 8.0),
             screen_edge_margin=data.get("SCREEN_EDGE_MARGIN", 150),
             center_exclusion_radius=data.get("CENTER_EXCLUSION_RADIUS", 50),
             target_destroyed_check_interval=data.get("TARGET_DESTROYED_CHECK_INTERVAL", 0.5),
