@@ -41,11 +41,23 @@ class MetinBot:
         self.monitor_manager = MonitorManager(self.logger)
         self.screen_capture = ScreenCapture(self.logger, debug=self.config.debug)
         self.image_matcher = ImageMatcher(self.logger, debug=self.config.debug)
+
+        # Create color detector with shape filtering parameters
+        from .vision.color_detector import ColorBasedDetector
+        color_detector = ColorBasedDetector(
+            logger=self.logger,
+            debug=self.config.debug,
+            min_circularity=self.config.min_circularity,
+            min_shape_score=self.config.min_shape_score,
+        )
+
         self.target_finder = TargetFinder(
             self.image_matcher,
             self.screen_capture,
             self.monitor_manager,
             self.logger,
+            vision_method=self.config.vision_method,
+            color_detector=color_detector,
         )
 
         # Input
@@ -61,6 +73,7 @@ class MetinBot:
             self.input_manager,
             self.movement,
             self.logger,
+            self.config,
             max_stuck_iterations=self.config.max_permitted_stuck_iterations,
             max_seconds_stuck=self.config.max_seconds_stuck,
         )
@@ -108,18 +121,9 @@ class MetinBot:
             self.logger.debug("MONITOR_INDEX=None (searching all monitors)")
 
         # Mode info
-        if self.config.wait_after_stone_destroyed > 0:
-            self.logger.debug(
-                f"WAIT_AFTER_STONE_DESTROYED={self.config.wait_after_stone_destroyed}s (Timer-based mode)"
-            )
-            self.logger.debug(
-                "Top bar checking is DISABLED - using timer-based stone destruction detection"
-            )
-        else:
-            self.logger.debug(
-                f"WAIT_AFTER_STONE_DESTROYED={self.config.wait_after_stone_destroyed}s (Top bar mode)"
-            )
-            self.logger.debug("Using top bar checking for stone destruction detection")
+        self.logger.debug(
+            f"WAIT_AFTER_SELECT={self.config.wait_after_select}s (Pause after target selection)"
+        )
 
         # Buff info
         if self.config.keep_buff_uptime:

@@ -4,6 +4,7 @@ from typing import Optional, List
 
 from ..core.state import BotState
 from ..core.logger import Logger
+from ..core.config import BotConfig
 from ..input.input_manager import InputManager
 from ..vision.target_finder import Target
 from ..vision.image_matcher import ImageMatch
@@ -19,6 +20,7 @@ class CombatController:
         input_manager: InputManager,
         movement: MovementController,
         logger: Logger,
+        config: BotConfig,
         max_stuck_iterations: int = 3,
         max_seconds_stuck: float = 1.0,
     ):
@@ -26,6 +28,7 @@ class CombatController:
         self.input_manager = input_manager
         self.movement = movement
         self.logger = logger
+        self.config = config
         self.max_stuck_iterations = max_stuck_iterations
         self.max_seconds_stuck = max_seconds_stuck
 
@@ -40,6 +43,11 @@ class CombatController:
         self.input_manager.attack_target(target.coords)
         self.state.select_target(target.coords, target.distance)
         self.logger.debug(f"Target selected at {time.time()}")
+
+        # Pause after selecting target
+        if self.config.wait_after_select > 0:
+            self.logger.debug(f"Pausing for {self.config.wait_after_select}s after target selection")
+            time.sleep(self.config.wait_after_select)
 
     def handle_pickup(self, pickup_enabled: bool, pickup_key: str = "z") -> None:
         """
