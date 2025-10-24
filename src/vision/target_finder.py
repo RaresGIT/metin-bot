@@ -358,6 +358,13 @@ class TargetFinder:
         monitor_region = self.monitor_manager.get_monitor_region(monitor_index)
         template_path = f"./src/assets/{assets_folder}/{element_name}.png"
 
+        # Extra logging for unstuck_check
+        is_unstuck_check = element_name == "unstuck_check"
+        if is_unstuck_check:
+            self.logger.info(f"[TARGET-FINDER] Looking for {template_path}")
+            self.logger.info(f"[TARGET-FINDER] Monitor region: {monitor_region}")
+            self.logger.info(f"[TARGET-FINDER] Confidence: {confidence}")
+
         if self.logger.debug_enabled:
             if monitor_region:
                 screenshot = self.screen_capture.capture_region(monitor_region)
@@ -378,6 +385,9 @@ class TargetFinder:
             confidence=confidence,
             grayscale=True,
         )
+
+        if is_unstuck_check:
+            self.logger.info(f"[TARGET-FINDER] unstuck_check result: {match}")
 
         if self.logger.debug_enabled:
             self.logger.debug(f"{element_name} found: {match is not None}")

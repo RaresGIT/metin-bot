@@ -48,6 +48,12 @@ class StoneFarmingStrategy(BotStrategy):
         self.unstuck_image_first_seen = 0.0  # When unstuck_check.png was first detected
         self.unstuck_image_detected = False  # Whether the image is currently visible
 
+        # Log unstuck configuration on startup
+        self.logger.info(f"[INIT] Image-based unstuck: {'ENABLED' if self.config.use_image_unstuck else 'DISABLED'}")
+        if self.config.use_image_unstuck:
+            self.logger.info(f"[INIT] Unstuck timeout: {self.config.image_unstuck_timeout}s")
+            self.logger.info(f"[INIT] Unstuck cooldown: {self.unstuck_cooldown}s")
+
     def execute(self) -> None:
         """Execute one iteration of stone farming with smart target tracking."""
         # Check for UI pause (inventory open)
@@ -57,7 +63,11 @@ class StoneFarmingStrategy(BotStrategy):
         # Check for image-based unstuck if enabled
         if self.config.use_image_unstuck:
             if self._check_image_unstuck():
+                self.logger.info("[EXECUTE] Unstuck was triggered, returning early to rescan")
                 return  # Unstuck was performed, return early to rescan
+        else:
+            if self.config.debug:
+                self.logger.debug("[EXECUTE] Image-based unstuck is DISABLED in config")
 
         # Check if we have an active target
         if self.state.is_target_selected():
@@ -394,46 +404,60 @@ class StoneFarmingStrategy(BotStrategy):
         """
         current_time = time.time()
 
+        if self.config.debug:
+            self.logger.debug("[UNSTUCK-CHECK] Starting image unstuck check")
+
         # Check cooldown - don't check too soon after last unstuck
         time_since_last_unstuck = current_time - self.last_unstuck_time
         if time_since_last_unstuck < self.unstuck_cooldown:
+            if self.config.debug:
+                self.logger.debug(
+                    f"[UNSTUCK-CHECK] On cooldown: {time_since_last_unstuck:.1f}s/{self.unstuck_cooldown}s"
+                )
             return False
 
         try:
+            if self.config.debug:
+                self.logger.debug("[UNSTUCK-CHECK] Searching for unstuck_check.png on screen...")
+
             # Look for unstuck_check.png on screen
             unstuck_indicator = self.target_finder.find_ui_element(
                 element_name="unstuck_check",
                 monitor_index=self.config.monitor_index,
             )
 
+            if self.config.debug:
+                self.logger.debug(f"[UNSTUCK-CHECK] Result: {unstuck_indicator}")
+
             if unstuck_indicator is not None:
+                self.logger.info("[UNSTUCK-CHECK] ✓ unstuck_check.png FOUND on screen!")
                 # Image is detected
                 if not self.unstuck_image_detected:
                     # First time seeing the image
                     self.unstuck_image_detected = True
                     self.unstuck_image_first_seen = current_time
-                    self.logger.info("Unstuck indicator detected on screen")
+                    self.logger.info("[UNSTUCK-CHECK] ⏱️ Starting unstuck timer (first detection)")
                 else:
                     # Image was already detected, check how long it's been present
                     time_present = current_time - self.unstuck_image_first_seen
 
-                    if self.config.debug:
-                        self.logger.debug(
-                            f"Unstuck indicator present for {time_present:.1f}s/"
-                            f"{self.config.image_unstuck_timeout}s"
-                        )
+                    self.logger.info(
+                        f"[UNSTUCK-CHECK] ⏱️ Indicator present for {time_present:.1f}s/"
+                        f"{self.config.image_unstuck_timeout}s"
+                    )
 
                     if time_present >= self.config.image_unstuck_timeout:
                         # Image has been present for 8 consecutive seconds, trigger unstuck!
                         self.logger.warning(
-                            f"Unstuck indicator present for {time_present:.1f}s - "
-                            f"Performing unstuck and rescanning!"
+                            f"[UNSTUCK-CHECK] 🚨 TRIGGERING UNSTUCK! Indicator present for {time_present:.1f}s"
                         )
 
                         # Clear current target if any
                         self.state.clear_target()
+                        self.logger.info("[UNSTUCK-CHECK] Cleared current target")
 
                         # Perform unstuck
+                        self.logger.info("[UNSTUCK-CHECK] Executing unstuck_pathfinding()...")
                         self.movement.unstuck_pathfinding()
 
                         # Update tracking
@@ -441,23 +465,30 @@ class StoneFarmingStrategy(BotStrategy):
                         self.unstuck_image_detected = False
                         self.unstuck_image_first_seen = 0.0
 
+                        self.logger.info("[UNSTUCK-CHECK] ✅ Unstuck complete, rescanning for targets...")
                         # Add a small delay before rescanning
                         time.sleep(0.5)
 
                         return True
             else:
                 # Image not detected, reset tracking
+                if self.config.debug:
+                    self.logger.debug("[UNSTUCK-CHECK] ✗ unstuck_check.png NOT found")
                 if self.unstuck_image_detected:
-                    self.logger.info("Unstuck indicator cleared")
+                    self.logger.info("[UNSTUCK-CHECK] Unstuck indicator cleared (no longer visible)")
                 self.unstuck_image_detected = False
                 self.unstuck_image_first_seen = 0.0
 
-        except pyautogui.ImageNotFoundException:
+        except pyautogui.ImageNotFoundException as e:
             # Image not found, reset tracking
+            if self.config.debug:
+                self.logger.debug(f"[UNSTUCK-CHECK] Exception: ImageNotFoundException - {e}")
             if self.unstuck_image_detected:
-                self.logger.info("Unstuck indicator cleared")
+                self.logger.info("[UNSTUCK-CHECK] Unstuck indicator cleared (exception)")
             self.unstuck_image_detected = False
             self.unstuck_image_first_seen = 0.0
+        except Exception as e:
+            self.logger.error(f"[UNSTUCK-CHECK] Unexpected error: {e}")
 
         return False
 
