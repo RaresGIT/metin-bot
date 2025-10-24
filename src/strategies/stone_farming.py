@@ -44,11 +44,20 @@ class StoneFarmingStrategy(BotStrategy):
         self.consecutive_unstuck_attempts = 0  # Count consecutive unstuck attempts
         self.unstuck_cooldown = 5.0  # Minimum seconds between unstuck attempts
 
+        # Image-based unstuck tracking
+        self.unstuck_image_first_seen = 0.0  # When unstuck_check.png was first detected
+        self.unstuck_image_detected = False  # Whether the image is currently visible
+
     def execute(self) -> None:
         """Execute one iteration of stone farming with smart target tracking."""
         # Check for UI pause (inventory open)
         if self._check_ui_pause():
             return
+
+        # Check for image-based unstuck if enabled
+        if self.config.use_image_unstuck:
+            if self._check_image_unstuck():
+                return  # Unstuck was performed, return early to rescan
 
         # Check if we have an active target
         if self.state.is_target_selected():
@@ -373,6 +382,82 @@ class StoneFarmingStrategy(BotStrategy):
         except pyautogui.ImageNotFoundException:
             if self.config.debug:
                 self.logger.debug("UI pause check: not found, continuing")
+
+        return False
+
+    def _check_image_unstuck(self) -> bool:
+        """
+        Check for unstuck_check.png on screen and trigger unstuck if found for configured duration.
+
+        Returns:
+            True if unstuck was performed, False otherwise
+        """
+        current_time = time.time()
+
+        # Check cooldown - don't check too soon after last unstuck
+        time_since_last_unstuck = current_time - self.last_unstuck_time
+        if time_since_last_unstuck < self.unstuck_cooldown:
+            return False
+
+        try:
+            # Look for unstuck_check.png on screen
+            unstuck_indicator = self.target_finder.find_ui_element(
+                element_name="unstuck_check",
+                monitor_index=self.config.monitor_index,
+            )
+
+            if unstuck_indicator is not None:
+                # Image is detected
+                if not self.unstuck_image_detected:
+                    # First time seeing the image
+                    self.unstuck_image_detected = True
+                    self.unstuck_image_first_seen = current_time
+                    self.logger.info("Unstuck indicator detected on screen")
+                else:
+                    # Image was already detected, check how long it's been present
+                    time_present = current_time - self.unstuck_image_first_seen
+
+                    if self.config.debug:
+                        self.logger.debug(
+                            f"Unstuck indicator present for {time_present:.1f}s/"
+                            f"{self.config.image_unstuck_timeout}s"
+                        )
+
+                    if time_present >= self.config.image_unstuck_timeout:
+                        # Image has been present for 8 consecutive seconds, trigger unstuck!
+                        self.logger.warning(
+                            f"Unstuck indicator present for {time_present:.1f}s - "
+                            f"Performing unstuck and rescanning!"
+                        )
+
+                        # Clear current target if any
+                        self.state.clear_target()
+
+                        # Perform unstuck
+                        self.movement.unstuck_pathfinding()
+
+                        # Update tracking
+                        self.last_unstuck_time = current_time
+                        self.unstuck_image_detected = False
+                        self.unstuck_image_first_seen = 0.0
+
+                        # Add a small delay before rescanning
+                        time.sleep(0.5)
+
+                        return True
+            else:
+                # Image not detected, reset tracking
+                if self.unstuck_image_detected:
+                    self.logger.info("Unstuck indicator cleared")
+                self.unstuck_image_detected = False
+                self.unstuck_image_first_seen = 0.0
+
+        except pyautogui.ImageNotFoundException:
+            # Image not found, reset tracking
+            if self.unstuck_image_detected:
+                self.logger.info("Unstuck indicator cleared")
+            self.unstuck_image_detected = False
+            self.unstuck_image_first_seen = 0.0
 
         return False
 

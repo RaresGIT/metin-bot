@@ -22,6 +22,10 @@ class BotConfig:
     max_seconds_stuck: float = 1.0
     unstuck_timeout: float = 8.0  # Seconds before attempting unstuck if clusters don't change
 
+    # Image-based unstuck detection
+    use_image_unstuck: bool = True  # Use image detection for unstuck logic
+    image_unstuck_timeout: float = 8.0  # Seconds image must be present before unstuck
+
     # Target tracking
     screen_edge_margin: int = 150  # Ignore targets within this distance from screen edges
     center_exclusion_radius: int = 50  # Ignore targets within this radius from screen center (player position)
@@ -70,6 +74,8 @@ class BotConfig:
             offset_y=data.get("OFFSET_Y", 45),
             wait_after_select=data.get("WAIT_AFTER_SELECT", 3.0),
             unstuck_timeout=data.get("UNSTUCK_TIMEOUT", 8.0),
+            use_image_unstuck=data.get("USE_IMAGE_UNSTUCK", True),
+            image_unstuck_timeout=data.get("IMAGE_UNSTUCK_TIMEOUT", 8.0),
             screen_edge_margin=data.get("SCREEN_EDGE_MARGIN", 150),
             center_exclusion_radius=data.get("CENTER_EXCLUSION_RADIUS", 50),
             target_destroyed_check_interval=data.get("TARGET_DESTROYED_CHECK_INTERVAL", 0.5),

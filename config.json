@@ -3,6 +3,8 @@
   "OFFSET_Y": 45,
   "WAIT_AFTER_SELECT": 4.5,
   "UNSTUCK_TIMEOUT": 8,
+  "USE_IMAGE_UNSTUCK": true,
+  "IMAGE_UNSTUCK_TIMEOUT": 8,
   "STONE_NAMES": ["dragon"],
   "PICKUP_DROP": true,
   "LURE_KEY": "",
