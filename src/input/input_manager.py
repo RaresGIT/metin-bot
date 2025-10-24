@@ -9,8 +9,9 @@ from ..core.logger import Logger
 class InputManager:
     """Coordinates keyboard and mouse input operations."""
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger, debug: bool = False):
         self.logger = logger
+        self.debug = debug
         self.keyboard = KeyboardController(logger)
         self.mouse = MouseController(logger)
 
@@ -21,6 +22,10 @@ class InputManager:
         Args:
             coords: (x, y) tuple of target location
         """
+        if self.debug:
+            self.logger.info(f"[DEBUG MODE] Would attack target at {coords}")
+            return
+
         self.logger.debug(f"Attacking target at {coords}")
         self.mouse.click_at(coords, move_delay=0.2)
 
@@ -31,6 +36,10 @@ class InputManager:
         Args:
             key: Pickup key (default 'z')
         """
+        if self.debug:
+            self.logger.info(f"[DEBUG MODE] Would press pickup key '{key}'")
+            return
+
         self.logger.debug("Picking up items")
         self.keyboard.press(key, delay=0.1)
 
@@ -41,6 +50,10 @@ class InputManager:
         Args:
             buff_keys: Key combination for buffs (e.g., 'ctrl+v')
         """
+        if self.debug:
+            self.logger.info(f"[DEBUG MODE] Would refresh buffs: {buff_keys}")
+            return
+
         self.logger.info(f"Refreshing buffs: {buff_keys}")
         self.keyboard.press_combo(buff_keys)
 

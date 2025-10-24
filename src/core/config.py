@@ -35,6 +35,12 @@ class BotConfig:
     buff_interval_max: int = 60
     buff_keys: str = "ctrl+v"
 
+    # Hotkeys
+    hotkey_pause: str = "f1"
+    hotkey_resume: str = "f2"
+    hotkey_toggle_pause: str = "f3"
+    hotkey_stop: str = "esc"
+
     # Debug
     debug: bool = False
 
@@ -57,6 +63,10 @@ class BotConfig:
             buff_interval_min=data.get("BUFF_INTERVAL_MIN", 30),
             buff_interval_max=data.get("BUFF_INTERVAL_MAX", 60),
             buff_keys=data.get("BUFF_KEYS", "ctrl+v"),
+            hotkey_pause=data.get("HOTKEY_PAUSE", "f1"),
+            hotkey_resume=data.get("HOTKEY_RESUME", "f2"),
+            hotkey_toggle_pause=data.get("HOTKEY_TOGGLE_PAUSE", "f3"),
+            hotkey_stop=data.get("HOTKEY_STOP", "esc"),
             debug=data.get("DEBUG", False),
         )
 

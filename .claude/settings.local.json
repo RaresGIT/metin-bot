@@ -5,7 +5,9 @@
       "Bash(if not exist \".claude\" mkdir .claude)",
       "Bash(mkdir:*)",
       "Bash(poetry --version)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(git checkout D:GitHubmetin-bot.claudecheckpoint.md)",
+      "Read(//d/**)"
     ],
     "deny": [],
     "ask": []

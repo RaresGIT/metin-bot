@@ -10,9 +10,10 @@ from ..core.logger import Logger
 class MovementController:
     """Handles character and camera movement."""
 
-    def __init__(self, keyboard: KeyboardController, logger: Logger):
+    def __init__(self, keyboard: KeyboardController, logger: Logger, debug: bool = False):
         self.keyboard = keyboard
         self.logger = logger
+        self.debug = debug
 
     def rotate_camera(self, duration: float = 1.0) -> None:
         """
@@ -21,6 +22,10 @@ class MovementController:
         Args:
             duration: How long to hold the rotation key
         """
+        if self.debug:
+            self.logger.info(f"[DEBUG MODE] Would rotate camera for {duration}s")
+            return
+
         self.logger.debug(f"Rotating camera for {duration}s")
         self.keyboard.hold("q", duration)
 
@@ -31,6 +36,10 @@ class MovementController:
         Args:
             duration: How long to move forward
         """
+        if self.debug:
+            self.logger.info(f"[DEBUG MODE] Would move forward for {duration}s")
+            return
+
         self.keyboard.hold("w", duration)
 
     def move_forward_random(self, min_duration: float = 0.5, max_duration: float = 0.75) -> None:
@@ -46,13 +55,17 @@ class MovementController:
 
     def move_camera_and_search(self) -> None:
         """Rotate camera and move forward to search for targets."""
+        if self.debug:
+            self.logger.info("[DEBUG MODE] Would move camera to search for targets")
+            return
+
         self.logger.info("Moving camera to search for targets")
 
         # Rotate camera
         self.rotate_camera(duration=1.0)
 
         # Move forward
-        self.move_forward_random()
+        self.move_forward_random(min_duration=0.7, max_duration=1)
 
         # Wait for camera to settle
         time.sleep(0.5)
@@ -66,6 +79,10 @@ class MovementController:
             center_x: Screen center X
             center_y: Screen center Y
         """
+        if self.debug:
+            self.logger.info("[DEBUG MODE] Would attempt to unstuck character")
+            return
+
         self.logger.info("Attempting to unstuck character")
         x, y = target_coords
 

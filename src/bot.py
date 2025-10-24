@@ -8,6 +8,7 @@ from .vision.screen_capture import MonitorManager, ScreenCapture
 from .vision.image_matcher import ImageMatcher
 from .vision.target_finder import TargetFinder
 from .input.input_manager import InputManager
+from .input.hotkey_listener import HotkeyListener
 from .game.window import GameWindow
 from .game.combat import CombatController
 from .game.movement import MovementController
@@ -48,13 +49,23 @@ class MetinBot:
             self.logger,
         )
 
+        # Color-based target finder (new alternative approach)
+        from .vision.color_target_finder import ColorTargetFinder
+        self.color_target_finder = ColorTargetFinder(
+            self.screen_capture,
+            self.monitor_manager,
+            self.logger,
+            debug=self.config.debug,
+        )
+
         # Input
-        self.input_manager = InputManager(self.logger)
+        self.input_manager = InputManager(self.logger, debug=self.config.debug)
+        self.hotkey_listener = HotkeyListener(self.logger)
 
         # Game
         self.game_window = GameWindow("Honor2.net!", self.logger)
         self.movement = MovementController(
-            self.input_manager.keyboard, self.logger
+            self.input_manager.keyboard, self.logger, debug=self.config.debug
         )
         self.combat = CombatController(
             self.state,
@@ -81,6 +92,8 @@ class MetinBot:
 
         self.logger.debug("=" * 50)
         self.logger.debug("DEBUG MODE ENABLED")
+        self.logger.info(">>> Mouse clicks and keyboard inputs are DISABLED in debug mode <<<")
+        self.logger.info(">>> Annotated images will be saved to debug/ folder <<<")
         self.logger.debug(
             f"Configuration: CENTER=({self.config.center_x}, {self.config.center_y}), "
             f"OFFSET=({self.config.offset_x}, {self.config.offset_y})"
@@ -136,14 +149,86 @@ class MetinBot:
 
         self.logger.debug("=" * 50)
 
+    def _setup_hotkeys(self) -> None:
+        """Setup keyboard hotkeys for bot control."""
+        # Pause hotkey
+        self.hotkey_listener.register_hotkey(
+            self.config.hotkey_pause,
+            lambda: self._on_pause(),
+            "Pause bot"
+        )
+
+        # Resume hotkey
+        self.hotkey_listener.register_hotkey(
+            self.config.hotkey_resume,
+            lambda: self._on_resume(),
+            "Resume bot"
+        )
+
+        # Toggle pause hotkey
+        self.hotkey_listener.register_hotkey(
+            self.config.hotkey_toggle_pause,
+            lambda: self._on_toggle_pause(),
+            "Toggle pause/resume"
+        )
+
+        # Stop hotkey
+        self.hotkey_listener.register_hotkey(
+            self.config.hotkey_stop,
+            lambda: self._on_stop(),
+            "Stop bot"
+        )
+
+        self.logger.info("=" * 50)
+        self.logger.info("KEYBOARD SHORTCUTS:")
+        self.logger.info(f"  {self.config.hotkey_pause.upper()}: Pause bot")
+        self.logger.info(f"  {self.config.hotkey_resume.upper()}: Resume bot")
+        self.logger.info(f"  {self.config.hotkey_toggle_pause.upper()}: Toggle pause/resume")
+        self.logger.info(f"  {self.config.hotkey_stop.upper()}: Stop bot")
+        self.logger.info("=" * 50)
+
+    def _on_pause(self) -> None:
+        """Handle pause hotkey."""
+        if not self.state.is_paused:
+            self.state.pause()
+            self.logger.info("Bot PAUSED")
+
+    def _on_resume(self) -> None:
+        """Handle resume hotkey."""
+        if self.state.is_paused:
+            self.state.resume()
+            self.logger.info("Bot RESUMED")
+
+    def _on_toggle_pause(self) -> None:
+        """Handle toggle pause hotkey."""
+        self.state.toggle_pause()
+        if self.state.is_paused:
+            self.logger.info("Bot PAUSED")
+        else:
+            self.logger.info("Bot RESUMED")
+
+    def _on_stop(self) -> None:
+        """Handle stop hotkey."""
+        self.logger.info(f"Stop hotkey ({self.config.hotkey_stop.upper()}) pressed - stopping bot...")
+        self.state.stop()
+
     def run(self) -> None:
         """Run the bot main loop."""
         self.logger.info("Starting bot...")
+
+        # Setup hotkeys
+        self._setup_hotkeys()
+
         self.logger.info("Waiting 1 sec for alt tab!")
         time.sleep(1)
 
         try:
             while self.strategy.should_continue():
+                # Check if paused
+                if self.state.is_paused:
+                    time.sleep(0.5)
+                    continue
+
                 # Check and refresh buffs
                 self.buff_manager.check_and_refresh()
 
@@ -157,6 +242,7 @@ class MetinBot:
             self.logger.error(f"Bot error: {e}")
             raise
         finally:
+            self.hotkey_listener.unregister_all()
             self.strategy.cleanup()
             self.logger.info("Bot stopped")
 

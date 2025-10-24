@@ -41,10 +41,23 @@ class StoneFarmingStrategy(BotStrategy):
         if self._check_ui_pause():
             return
 
-        # Search for stones
-        stones = self.target_finder.find_stones(
-            stone_names=self.config.stone_names,
+        # Search for stones using COLOR-BASED detection
+        # Determine color from stone name (pumpkin = orange)
+        color = 'orange' if 'pumpkin' in str(self.config.stone_names).lower() else 'orange'
+
+        from ..vision.color_target_finder import ColorTargetFinder
+        color_finder = ColorTargetFinder(
+            self.target_finder.screen_capture,
+            self.target_finder.monitor_manager,
+            self.logger,
+            debug=self.config.debug
+        )
+
+        stones = color_finder.find_by_color(
+            color_name=color,
             monitor_index=self.config.monitor_index,
+            min_area=100,
+            max_area=10000,
         )
 
         # Farm stones using appropriate mode

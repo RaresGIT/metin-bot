@@ -36,6 +36,11 @@ class CombatController:
         Args:
             target: Target object with coordinates and distance
         """
+        if self.input_manager.debug:
+            self.logger.info(f"[DEBUG MODE] Would attack target at {target.coords} (distance: {target.distance:.2f})")
+            # Don't change state in debug mode
+            return
+
         self.logger.info(f"Attacking target at {target.coords}")
         self.input_manager.attack_target(target.coords)
         self.state.select_target(target.coords, target.distance)

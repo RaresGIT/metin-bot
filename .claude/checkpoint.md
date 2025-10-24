@@ -1,6 +1,6 @@
 # Metin Bot - Project Checkpoint
 
-**Date:** 2025-10-11
+**Date:** 2025-10-12
 **Project:** Metin2 Stone Farming Bot (Refactored)
 **Location:** `D:\GitHub\metin-bot\`
 
@@ -97,6 +97,11 @@ Legacy files (kept for backward compatibility):
   - `InputManager` - Coordinates keyboard + mouse
   - Game-specific actions (attack, pickup, buffs)
   - Abstracts away input library details
+
+- **`hotkey_listener.py`** - Keyboard hotkey management
+  - `HotkeyListener` - Register and manage hotkeys
+  - Support for pause/resume/stop controls
+  - Configurable key bindings
 
 ### Game Layer (`src/game/`)
 
@@ -229,7 +234,11 @@ pip install keyboard pyautogui pydirectinput pywin32 Pillow opencv-python screen
   "BUFF_KEYS": "ctrl+v",
   "KEEP_BUFF_UPTIME": true,
   "BUFF_INTERVAL_MIN": 30,
-  "BUFF_INTERVAL_MAX": 60
+  "BUFF_INTERVAL_MAX": 60,
+  "HOTKEY_PAUSE": "f1",
+  "HOTKEY_RESUME": "f2",
+  "HOTKEY_TOGGLE_PAUSE": "f3",
+  "HOTKEY_STOP": "esc"
 }
 ```
 
@@ -432,7 +441,15 @@ strategy.execute()
 - `null` = search all monitors
 - Dynamic monitor detection
 
-### 4. Debug Mode
+### 4. Debug Mode (Enhanced)
+- **Visual Overlays** - Annotated images with bounding boxes around detected targets
+  - Green boxes around all detected stones/targets
+  - Red crosshair showing exact click location
+  - Images saved to `debug/` folder with timestamps
+- **No Input Mode** - Mouse clicks and keyboard inputs are disabled in debug mode
+  - Bot only visualizes what it would do
+  - Safe testing without affecting the game
+  - Console logs show intended actions with `[DEBUG MODE]` prefix
 - Detailed console logging
 - Screenshot capture to `debug/` folder
 - Execution flow visualization
@@ -450,7 +467,80 @@ strategy.execute()
 - Exit key detection (ESC)
 - Deadline checking
 
+### 7. Keyboard Hotkeys (NEW)
+- **F1** - Pause bot (keeps bot running but stops executing actions)
+- **F2** - Resume bot (resumes from paused state)
+- **F3** - Toggle pause/resume (single key to switch between states)
+- **ESC** - Stop bot completely (exits the program)
+- All hotkeys are configurable in `config.json`
+- Hotkeys work globally while bot is running
+- Visual feedback in console when hotkeys are pressed
+
 ## Recent Changes & Fixes
+
+### Session 4 (2025-10-22) - Enhanced Debug Mode with Visual Overlays
+
+1. **Visual Debugging**
+   - Added `draw_matches_overlay()` method to `ImageMatcher` class
+   - Draws green bounding boxes around all detected matches
+   - Draws red crosshair and circle at click locations
+   - Automatically saves annotated images in debug mode
+
+2. **No-Input Debug Mode**
+   - Updated `InputManager` to skip all mouse/keyboard inputs when `debug=True`
+   - Added debug flag to `attack_target()`, `pickup_items()`, and `refresh_buffs()`
+   - Console logs show `[DEBUG MODE]` prefix for skipped actions
+   - Safe testing without affecting the game
+
+3. **Target Visualization**
+   - `TargetFinder.find_stones()` now generates annotated images showing all found stones
+   - `TargetFinder.calculate_closest_target()` generates images showing target selection
+   - Each annotated image shows both the detected matches and the selected click point
+   - Images saved with timestamps: `stones_found_annotated.png`, `target_selection_annotated.png`
+
+4. **Updated Components**
+   - `src/vision/image_matcher.py` - Added PIL ImageDraw for overlays
+   - `src/input/input_manager.py` - Added debug mode support
+   - `src/vision/target_finder.py` - Integrated overlay generation
+   - `src/game/combat.py` - Enhanced logging for debug mode
+   - `src/bot.py` - Pass debug flag to InputManager
+
+5. **User Experience**
+   - Clear startup messages indicating debug mode is active
+   - Informative messages about disabled inputs and overlay generation
+   - Easy visual verification of bot detection and decision-making
+
+### Session 3 (2025-10-12) - Keyboard Hotkeys Implementation
+
+1. **Pause/Resume Controls**
+   - Added pause state management to `BotState` class
+   - Implemented `pause()`, `resume()`, `toggle_pause()` methods
+   - Bot main loop now checks pause state each iteration
+
+2. **Hotkey System**
+   - Created new `HotkeyListener` class in `src/input/hotkey_listener.py`
+   - Integrated keyboard library for global hotkey detection
+   - Support for multiple simultaneous hotkeys
+   - Proper cleanup on bot shutdown
+
+3. **Configuration**
+   - Added hotkey configuration to `BotConfig` dataclass
+   - New config options: `HOTKEY_PAUSE`, `HOTKEY_RESUME`, `HOTKEY_TOGGLE_PAUSE`, `HOTKEY_STOP`
+   - Default bindings: F1 (pause), F2 (resume), F3 (toggle), ESC (stop)
+   - All hotkeys are customizable via `config.json`
+
+4. **Integration**
+   - MetinBot now initializes `HotkeyListener` on startup
+   - Hotkeys are registered before bot starts running
+   - Console displays available hotkeys on startup
+   - Visual feedback when hotkeys are pressed
+   - Hotkeys are properly unregistered on shutdown
+
+5. **User Experience**
+   - Bot can be paused mid-execution without stopping
+   - Seamless resume from paused state
+   - Toggle key for quick pause/resume switching
+   - Stop key for clean shutdown
 
 ### Session 2 (2025-10-11) - Complete Refactor & Poetry Setup
 
@@ -592,7 +682,7 @@ D:\GitHub\metin-bot\
 │   │   ├── __init__.py
 │   │   ├── config.py             # Configuration dataclass
 │   │   ├── logger.py             # Logging
-│   │   └── state.py              # Runtime state
+│   │   └── state.py              # Runtime state (with pause support)
 │   ├── vision/
 │   │   ├── __init__.py
 │   │   ├── screen_capture.py    # Screenshots, monitors
@@ -602,7 +692,8 @@ D:\GitHub\metin-bot\
 │   │   ├── __init__.py
 │   │   ├── keyboard.py          # Keyboard control
 │   │   ├── mouse.py             # Mouse control
-│   │   └── input_manager.py    # High-level input
+│   │   ├── input_manager.py    # High-level input
+│   │   └── hotkey_listener.py   # Hotkey management (NEW)
 │   ├── game/
 │   │   ├── __init__.py
 │   │   ├── window.py            # Window management
@@ -644,6 +735,31 @@ D:\GitHub\metin-bot\
 
 ---
 
-**Last Updated:** 2025-10-11
-**Status:** Fully Refactored and Functional
-**Next Session:** Ready for feature additions, testing, or further refinements
+**Last Updated:** 2025-10-22
+**Status:** Fully Refactored and Functional with Enhanced Debug Mode
+**Next Session:** Ready for testing visual debug mode, feature additions, or further refinements
+
+## New Features Summary
+
+### Enhanced Debug Mode (2025-10-22)
+The bot now includes powerful visual debugging capabilities:
+- **No-Input Mode**: Set `"DEBUG": true` in `config.json` to disable all mouse clicks and keyboard inputs
+- **Visual Overlays**: Annotated screenshots showing:
+  - Green bounding boxes around all detected stones/targets
+  - Red crosshairs marking the exact click location
+  - All images saved to `debug/` folder with timestamps
+- **Safe Testing**: Test bot logic and detection without affecting the game
+- Perfect for:
+  - Verifying stone detection accuracy
+  - Checking target selection logic
+  - Adjusting confidence thresholds
+  - Testing new template images
+
+### Keyboard Hotkeys (2025-10-12)
+The bot now supports keyboard shortcuts for runtime control:
+- Press **F1** to pause the bot
+- Press **F2** to resume the bot
+- Press **F3** to toggle between pause/resume
+- Press **ESC** to stop the bot completely
+
+All hotkeys can be customized in `config.json`. The hotkeys work globally while the bot is running, and the console provides visual feedback when pressed.

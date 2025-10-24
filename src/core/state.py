@@ -18,6 +18,7 @@ class BotState:
 
     def __init__(self, buff_interval_min: int = 30, buff_interval_max: int = 60):
         self.is_running = True
+        self.is_paused = False
         self.start_time = time.time()
 
         # Combat state
@@ -31,6 +32,18 @@ class BotState:
     def stop(self) -> None:
         """Stop the bot."""
         self.is_running = False
+
+    def pause(self) -> None:
+        """Pause the bot."""
+        self.is_paused = True
+
+    def resume(self) -> None:
+        """Resume the bot."""
+        self.is_paused = False
+
+    def toggle_pause(self) -> None:
+        """Toggle pause state."""
+        self.is_paused = not self.is_paused
 
     def elapsed_hours(self) -> float:
         """Get elapsed time in hours."""

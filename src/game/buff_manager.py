@@ -32,6 +32,14 @@ class BuffManager:
         if not self.enabled:
             return
 
+        # Skip buff refresh in debug mode
+        if self.input_manager.debug:
+            if self.state.should_refresh_buffs():
+                self.logger.info("[DEBUG MODE] Would refresh buffs but skipping")
+                # Still mark as refreshed to avoid spam
+                self.state.mark_buffs_refreshed(self.interval_min, self.interval_max)
+            return
+
         if self.state.should_refresh_buffs():
             time_since_last = time.time() - self.state.last_buff_time
             self.logger.info(f"Refreshing buffs (last buff was {time_since_last:.1f}s ago)")
