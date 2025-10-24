@@ -132,28 +132,54 @@ class MovementController:
 
     def unstuck_pathfinding(self) -> None:
         """
-        Attempt to unstuck character from terrain using random WASD movements.
+        Attempt to unstuck character from terrain using aggressive WASD movements.
         Used when player gets stuck while pathfinding to targets.
         """
         self.logger.info("Attempting to unstuck from terrain")
 
-        # Random movement pattern to try to escape terrain
-        movements = ["w", "a", "s", "d"]
+        # Strategy: Try backing up first (most common stuck scenario), then random movements
 
-        # Try 3-5 random movements
-        num_movements = random.randint(3, 5)
+        # Step 1: Try backing up and strafing (most effective for obstacle collision)
+        self.logger.debug("Unstuck Step 1: Backing up")
+        self.keyboard.hold("s", random.uniform(1.0, 1.5))
+        time.sleep(0.2)
+
+        # Add a strafe while backing up
+        self.keyboard.hold(random.choice(["a", "d"]), random.uniform(0.8, 1.2))
+        time.sleep(0.2)
+
+        # Step 2: Jump to potentially get over small obstacles
+        self.logger.debug("Unstuck Step 2: Jumping")
+        self.keyboard.tap("space")
+        time.sleep(0.3)
+
+        # Step 3: Aggressive random movements (longer duration)
+        movements = ["w", "a", "s", "d"]
+        num_movements = random.randint(4, 6)  # More attempts
 
         for i in range(num_movements):
-            # Pick a random direction
             direction = random.choice(movements)
-            duration = random.uniform(0.3, 0.7)
+            duration = random.uniform(0.8, 1.5)  # Longer movements
 
             if self.logger.debug_enabled:
-                self.logger.debug(f"Unstuck attempt {i+1}/{num_movements}: {direction.upper()} for {duration:.2f}s")
+                self.logger.debug(f"Unstuck Step 3.{i+1}: {direction.upper()} for {duration:.2f}s")
 
             self.keyboard.hold(direction, duration)
-            time.sleep(0.1)  # Small pause between movements
 
-        # Add a random camera rotation to change perspective
-        self.rotate_camera(duration=random.uniform(0.5, 1.0))
+            # Occasional jump during movement
+            if random.random() < 0.3:
+                self.keyboard.tap("space")
+
+            time.sleep(0.15)
+
+        # Step 4: Large camera rotation to change perspective
+        self.logger.debug("Unstuck Step 4: Camera rotation")
+        rotation_duration = random.uniform(1.5, 2.5)  # Longer rotation
+        self.rotate_camera(duration=rotation_duration)
+        time.sleep(0.3)
+
+        # Step 5: Final forward movement attempt
+        self.logger.debug("Unstuck Step 5: Forward movement")
+        self.keyboard.hold("w", random.uniform(1.0, 1.5))
+
         self.logger.info("Unstuck attempt completed")
