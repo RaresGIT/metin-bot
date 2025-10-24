@@ -26,6 +26,7 @@ class BotConfig:
     screen_edge_margin: int = 150  # Ignore targets within this distance from screen edges
     center_exclusion_radius: int = 50  # Ignore targets within this radius from screen center (player position)
     target_destroyed_check_interval: float = 0.5  # How often to check if target still exists
+    target_destroyed_tolerance: int = 150  # Distance tolerance for checking if target still exists (pixels)
 
     # Search behavior
     search_camera_rotations: int = 8  # Number of camera rotations when searching
@@ -72,6 +73,7 @@ class BotConfig:
             screen_edge_margin=data.get("SCREEN_EDGE_MARGIN", 150),
             center_exclusion_radius=data.get("CENTER_EXCLUSION_RADIUS", 50),
             target_destroyed_check_interval=data.get("TARGET_DESTROYED_CHECK_INTERVAL", 0.5),
+            target_destroyed_tolerance=data.get("TARGET_DESTROYED_TOLERANCE", 150),
             search_camera_rotations=data.get("SEARCH_CAMERA_ROTATIONS", 8),
             search_move_forward_time=data.get("SEARCH_MOVE_FORWARD_TIME", 1.0),
             stone_names=data.get("STONE_NAMES", ["blue", "red", "gold"]),

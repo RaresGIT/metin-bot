@@ -60,20 +60,38 @@ class StoneFarmingStrategy(BotStrategy):
         """Handle ongoing combat with current target."""
         current_time = time.time()
 
-        # Reset position tracking while in combat (not pathfinding)
-        self.last_cluster_positions = []
-        self.last_position_change_time = current_time
+        # Check if we're stuck pathfinding to the target
+        # This happens when we click a target but pathfinding fails
+        elapsed_since_select = self.state.time_since_target_selected()
+
+        # After initial delay, start checking if stuck (check every iteration)
+        if elapsed_since_select >= 3.0:  # Wait at least 3s before checking for stuck
+            # Get current stones to check if we're stuck
+            stones = self.target_finder.find_stones(
+                stone_names=self.config.stone_names,
+                monitor_index=self.config.monitor_index,
+            )
+
+            # Check if stuck (positions haven't changed)
+            # _check_pathfinding_stuck handles its own position tracking
+            if stones and self._check_pathfinding_stuck(stones):
+                # Unstuck was performed, abandon this target
+                self.logger.warning("Stuck while pathfinding to target, abandoning target")
+                self.state.clear_target()
+                return
 
         # Periodically check if target still exists
         if current_time - self.last_target_check >= self.config.target_destroyed_check_interval:
             self.last_target_check = current_time
 
             target_coords = self.state.last_selected.coords
+            # Use configurable tolerance to reduce false positives
+            # Stones can move slightly on screen due to camera movement or damage
             still_present = self.target_finder.is_target_still_present(
                 target_coords=target_coords,
                 stone_names=self.config.stone_names,
                 monitor_index=self.config.monitor_index,
-                tolerance=50,
+                tolerance=self.config.target_destroyed_tolerance,
             )
 
             if not still_present:
