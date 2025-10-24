@@ -162,6 +162,7 @@ class TargetFinder:
         offset_x: int,
         offset_y: int,
         edge_margin: int = 0,
+        center_exclusion_radius: int = 0,
         screen_width: Optional[int] = None,
         screen_height: Optional[int] = None,
     ) -> Optional[Target]:
@@ -176,6 +177,7 @@ class TargetFinder:
             offset_x: Click offset X
             offset_y: Click offset Y
             edge_margin: Ignore targets within this distance from screen edges
+            center_exclusion_radius: Ignore targets within this radius from screen center (player position)
             screen_width: Screen width for edge filtering
             screen_height: Screen height for edge filtering
 
@@ -205,6 +207,19 @@ class TargetFinder:
                             self.logger.debug(f"Skipping edge cluster at ({cx}, {cy})")
                         continue
 
+                # Skip targets too close to screen center (player position)
+                if center_exclusion_radius > 0:
+                    distance_from_center = sqrt(
+                        pow(cx - center_x, 2) + pow(cy - center_y, 2)
+                    )
+                    if distance_from_center < center_exclusion_radius:
+                        if self.logger.debug_enabled:
+                            self.logger.debug(
+                                f"Skipping center cluster at ({cx}, {cy}), "
+                                f"distance from center: {distance_from_center:.1f}px < {center_exclusion_radius}px"
+                            )
+                        continue
+
                 # Calculate distance from center with aspect ratio correction
                 distance = sqrt(
                     pow(cx - center_x, 2)
@@ -231,6 +246,19 @@ class TargetFinder:
                         y < edge_margin or y > screen_height - edge_margin):
                         if self.logger.debug_enabled:
                             self.logger.debug(f"Skipping edge match at ({x}, {y})")
+                        continue
+
+                # Skip targets too close to screen center (player position)
+                if center_exclusion_radius > 0:
+                    distance_from_center = sqrt(
+                        pow(x - center_x, 2) + pow(y - center_y, 2)
+                    )
+                    if distance_from_center < center_exclusion_radius:
+                        if self.logger.debug_enabled:
+                            self.logger.debug(
+                                f"Skipping center match at ({x}, {y}), "
+                                f"distance from center: {distance_from_center:.1f}px < {center_exclusion_radius}px"
+                            )
                         continue
 
                 # Calculate distance from center with aspect ratio correction

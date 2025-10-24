@@ -117,6 +117,7 @@ class StoneFarmingStrategy(BotStrategy):
                 offset_x=self.config.offset_x,
                 offset_y=self.config.offset_y,
                 edge_margin=self.config.screen_edge_margin,
+                center_exclusion_radius=self.config.center_exclusion_radius,
             )
 
             if target:
@@ -250,6 +251,7 @@ class StoneFarmingStrategy(BotStrategy):
                         offset_x=self.config.offset_x,
                         offset_y=self.config.offset_y,
                         edge_margin=self.config.screen_edge_margin,
+                        center_exclusion_radius=self.config.center_exclusion_radius,
                     )
 
                     if target:
@@ -334,6 +336,8 @@ class StoneFarmingStrategy(BotStrategy):
                     aspect_ratio=self.config.aspect_ratio,
                     offset_x=self.config.offset_x,
                     offset_y=self.config.offset_y,
+                    edge_margin=self.config.screen_edge_margin,
+                    center_exclusion_radius=self.config.center_exclusion_radius,
                 )
                 self.combat.attack_target(target)
             else:
@@ -378,6 +382,8 @@ class StoneFarmingStrategy(BotStrategy):
                     aspect_ratio=self.config.aspect_ratio,
                     offset_x=self.config.offset_x,
                     offset_y=self.config.offset_y,
+                    edge_margin=self.config.screen_edge_margin,
+                    center_exclusion_radius=self.config.center_exclusion_radius,
                 )
                 self.combat.attack_target(target)
             elif stones_found == 0 and top_bar is None:

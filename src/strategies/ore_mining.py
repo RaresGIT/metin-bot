@@ -55,6 +55,7 @@ class OreMiningStrategy(BotStrategy):
             aspect_ratio=self.config.aspect_ratio,
             offset_x=self.config.offset_x,
             offset_y=self.config.offset_y,
+            center_exclusion_radius=self.config.center_exclusion_radius,
         )
 
         self.logger.info(f"Mining ore at {target.coords}")

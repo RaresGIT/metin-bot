@@ -94,6 +94,7 @@ class DungeonRunnerStrategy(BotStrategy):
                 aspect_ratio=self.config.aspect_ratio,
                 offset_x=-10,  # Dungeon-specific offset
                 offset_y=85,
+                center_exclusion_radius=self.config.center_exclusion_radius,
             )
             self.combat.attack_target(target)
 

@@ -24,6 +24,7 @@ class BotConfig:
 
     # Target tracking
     screen_edge_margin: int = 150  # Ignore targets within this distance from screen edges
+    center_exclusion_radius: int = 50  # Ignore targets within this radius from screen center (player position)
     target_destroyed_check_interval: float = 0.5  # How often to check if target still exists
 
     # Search behavior
@@ -69,6 +70,7 @@ class BotConfig:
             wait_after_select=data.get("WAIT_AFTER_SELECT", 3.0),
             unstuck_timeout=data.get("UNSTUCK_TIMEOUT", 10.0),
             screen_edge_margin=data.get("SCREEN_EDGE_MARGIN", 150),
+            center_exclusion_radius=data.get("CENTER_EXCLUSION_RADIUS", 50),
             target_destroyed_check_interval=data.get("TARGET_DESTROYED_CHECK_INTERVAL", 0.5),
             search_camera_rotations=data.get("SEARCH_CAMERA_ROTATIONS", 8),
             search_move_forward_time=data.get("SEARCH_MOVE_FORWARD_TIME", 1.0),
